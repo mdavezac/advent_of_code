@@ -3,6 +3,7 @@
 (require racket/string)
 (require racket/list)
 (require 2htdp/abstraction)
+(require racket/function)
 
 (define (read-tape filename)
     (call-with-input-file filename
@@ -29,6 +30,9 @@
         (values tape)
         (run-tape new-tape (+ n 1)))))
 
+(define (modify-tape tape noun verb)
+    (append (list (first tape)) (list noun verb) (drop tape 3)))
+
 (require rackunit)
 (check-equal? (run-op 0 '(1 1 2 0)) '(3 1 2 0) "modify prior")
 (check-equal? (run-op 0 '(2 4 2 4 99 6 6 6)) '(2 4 2 4 198 6 6 6) "modify post")
@@ -38,7 +42,8 @@
     (run-tape '(1 1 1 1 1 1 1 1 99 0 0 0 ))
     '(1 4 1 1 1 1 1 1 99 0 0 0)
     "Check running a full tape")
+(check-equal? (modify-tape '(1 2 3 4) 5 6) '(1 5 6 4) "modify the tape")
 
-(define (modify-1201 tape) (append (list (first tape)) '(12 2) (drop tape 3)))
 
-((compose first run-tape modify-1201 read-tape) "day2.data")
+((compose (curry - 19690720) first run-tape (curryr modify-tape 23 47) read-tape) "day2.data")
+(+ (* 100 23) 47)
