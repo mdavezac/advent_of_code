@@ -51,6 +51,14 @@
 (define (Location-manhattan location)
     (+ (abs (Location-x location)) (abs (Location-y location))))
 
+(define intersections
+    (compose
+       (curryr set-remove (Location 0 0))
+       (curry apply set-intersect)
+       (curry map (compose list->set path-points))
+       parse-paths))
+
+
 (require rackunit)
 (check-equal? (Location 1 2) (Location 1 2) "compare structs")
 (check-equal? (Location-+ (Location -1 1) (Location 1 -1)) (Location 0 0) "+")
@@ -77,12 +85,11 @@
     (list (Location 0 0) (Location 1 0) (Location 2 0) (Location 2 1) (Location 1 1))
     "Three subpaths")
 (check-equal? (Location-manhattan (Location 1 -3)) 4 "Manhattan distance")
-
-((compose
-    (curry apply min)
-    (curry map Location-manhattan)
-    set->list
-    (curryr set-remove (Location 0 0))
-    (curry apply set-intersect)
-    (curry map (compose list->set path-points))
-    parse-paths) "day3.data")
+(check-equal?
+    ((compose
+        (curry apply min)
+        (curry map Location-manhattan)
+        set->list
+        intersections) "day3.data")
+    4981
+    "day3 part1")
