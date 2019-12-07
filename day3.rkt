@@ -20,6 +20,9 @@
             (for/list ([line (in-lines port)])
                 (map parse (string-split line ","))))))
 
+(define (read-paths filename)
+    (map path-points (parse-paths filename)))
+
 (define (subpath-increment subpath)
     (Location 
         (match (Subpath-direction subpath) [#\R 1] [#\L -1] [else 0])
@@ -55,8 +58,28 @@
     (compose
        (curryr set-remove (Location 0 0))
        (curry apply set-intersect)
-       (curry map (compose list->set path-points))
-       parse-paths))
+       (curry map list->set)))
+
+(define (wire-length paths intersection)
+    (+ (index-of (first paths) intersection)
+       (index-of (second paths) intersection)))
+
+(define (wire-lengths paths)
+    (map (curry wire-length paths) (set->list (intersections paths))))
+
+(define part-1
+    (compose
+        (curry apply min)
+        (curry map Location-manhattan)
+        set->list
+        intersections
+        read-paths))
+
+(define part-2
+    (compose
+        (curry apply min)
+        wire-lengths
+        read-paths))
 
 
 (require rackunit)
@@ -85,11 +108,5 @@
     (list (Location 0 0) (Location 1 0) (Location 2 0) (Location 2 1) (Location 1 1))
     "Three subpaths")
 (check-equal? (Location-manhattan (Location 1 -3)) 4 "Manhattan distance")
-(check-equal?
-    ((compose
-        (curry apply min)
-        (curry map Location-manhattan)
-        set->list
-        intersections) "day3.data")
-    4981
-    "day3 part1")
+(check-equal? (part-1 "day3.data") 4981 "day3 part1")
+(check-equal? (part-2 "day3.data") 164012 "day3 part2")
