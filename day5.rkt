@@ -5,6 +5,7 @@
 (struct Operation (tape-inc input-inc) #:transparent)
 (struct Output Operation (value))
 (struct WriteTape Operation (index value))
+(struct Exit Operation ())
 
 (struct Tape (tape head) #:transparent)
 
@@ -28,7 +29,6 @@
                 (list-ref stream value)
                 value)))))
 
-
 (define (action-output action stream)
     (if (Output? action) (append stream (list (Output-value action))) stream))
 (define (action-input action stream)
@@ -46,11 +46,14 @@
             (Tape (append head (list value) tail) (Tape-head tape)))
         tape))
 
-(define (op-multiply tape)
+(define (binop-writeout op tape)
     (let ([in-0 (Tape-arg tape 1)]
           [in-1 (Tape-arg tape 2)]
           [output-index (Tape-arg tape 3 #t)])
-    (WriteTape 4 0 output-index (* in-0 in-1))))
+    (WriteTape 4 0 output-index (op in-0 in-1))))
+
+(define (op-multiply tape) (binop-writeout * tape))
+(define (op-sum tape) (binop-writeout + tape))
 
 (require rackunit)
 
