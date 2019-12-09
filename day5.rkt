@@ -2,21 +2,30 @@
 
 (require racket/list)
 
-(define (extract-code number) (remainder number 100))
-
-(define (extract-modes number)
-    (list (remainder (quotient number 100) 10)
-          (remainder (quotient number 1000) 10)
-          (remainder (quotient number 10000) 10)))
-
-(define (tape-value value tape [parameter 0])
-    (if (= parameter 0) (list-ref tape value) value))
-
 (struct Operation (tape-inc input-inc) #:transparent)
 (struct Output Operation (value))
 (struct WriteTape Operation (index value))
 
 (struct Tape (tape head) #:transparent)
+
+(define (Tape-code tape)
+    (remainder (list-ref (Tape-tape tape) (Tape-head tape)) 100))
+
+(define (Tape-modes tape)
+    (let ([number (list-ref (Tape-tape tape) (Tape-head tape))])
+    (list (remainder (quotient number 100) 10)
+          (remainder (quotient number 1000) 10)
+          (remainder (quotient number 10000) 10))))
+
+(define (Tape-arg tape arg)
+    (if (= arg 0) 
+        ((list-ref (Tape-tape tape) (Tape-head tape)))
+        (let* ([head (Tape-head tape)]
+               [stream (Tape-tape tape)]
+               [mode (list-ref (Tape-modes tape) arg)]
+               [value (list-ref stream (+ head arg))])
+            (if (= mode 0) (list-ref stream value) value))))
+
 
 (define (action-output action stream)
     (if (Output? action) (append stream (list (Output-value action))) stream))
@@ -43,9 +52,10 @@
 
 (require rackunit)
 
-(check-equal? (extract-code 1002) 2 "extract the code")
-(check-equal? (extract-modes 1002) '(0 1 0) "extract a few parameters")
-(check-equal? (extract-modes 11002) '(0 1 1) "extract a few parameters")
+(check-equal? (Tape-code (Tape '(1002 1 1) 0)) 2 "extract the code")
+(check-equal? (Tape-code (Tape '(1 1012 1 1) 1)) 12 "extract the code")
+(check-equal? (Tape-modes (Tape '(1002 1 1) 0)) '(0 1 0) "extract a few parameters")
+(check-equal? (Tape-modes (Tape '(1 11002 1 1) 1)) '(0 1 1) "extract a few parameters")
 (check-equal? (tape-value 1 '(0 5 6 7 3 2))  5 "Get by reference")
 (check-equal? (tape-value 1 '(0 5 6 7 3 2) 0)  5 "Get by reference")
 (check-equal? (tape-value 1 '(0 5 6 7 3 2) 1)  1 "Get by value")
