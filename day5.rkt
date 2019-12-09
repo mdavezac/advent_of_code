@@ -17,14 +17,16 @@
           (remainder (quotient number 1000) 10)
           (remainder (quotient number 10000) 10))))
 
-(define (Tape-arg tape arg)
-    (if (= arg 0) 
-        ((list-ref (Tape-tape tape) (Tape-head tape)))
-        (let* ([head (Tape-head tape)]
-               [stream (Tape-tape tape)]
-               [mode (list-ref (Tape-modes tape) arg)]
-               [value (list-ref stream (+ head arg))])
-            (if (= mode 0) (list-ref stream value) value))))
+(define (Tape-arg tape arg [output #f])
+    (let ([head (Tape-head tape)]
+          [stream (Tape-tape tape)])
+    (if (= arg 0)
+        (list-ref stream head)
+        (let ([mode (list-ref (Tape-modes tape) (- arg 1))]
+              [value (list-ref stream (+ head arg))])
+            (if (and (= mode 0) (not output))
+                (list-ref stream value)
+                value)))))
 
 
 (define (action-output action stream)
@@ -44,11 +46,11 @@
             (Tape (append head (list value) tail) (Tape-head tape)))
         tape))
 
-; (define op-multiply (tape)
-;     (let* ([modes (extract-modes (first tape))]
-;            [left (tape-value )]
-;         )
-;     (Output 4 0 (* (tape-value  ))))
+(define (op-multiply tape)
+    (let ([in-0 (Tape-arg tape 1)]
+          [in-1 (Tape-arg tape 2)]
+          [output-index (Tape-arg tape 3 #t)])
+    (WriteTape 4 0 output-index (* in-0 in-1))))
 
 (require rackunit)
 
@@ -56,9 +58,10 @@
 (check-equal? (Tape-code (Tape '(1 1012 1 1) 1)) 12 "extract the code")
 (check-equal? (Tape-modes (Tape '(1002 1 1) 0)) '(0 1 0) "extract a few parameters")
 (check-equal? (Tape-modes (Tape '(1 11002 1 1) 1)) '(0 1 1) "extract a few parameters")
-(check-equal? (tape-value 1 '(0 5 6 7 3 2))  5 "Get by reference")
-(check-equal? (tape-value 1 '(0 5 6 7 3 2) 0)  5 "Get by reference")
-(check-equal? (tape-value 1 '(0 5 6 7 3 2) 1)  1 "Get by value")
+(check-equal? (Tape-arg (Tape '(100 5 6 7 3 2) 0) 1) 5 "Get by value")
+(check-equal? (Tape-arg (Tape '(1 1005 6 7 3 2) 1) 2) 7 "Get by value")
+(check-equal? (Tape-arg (Tape '(0 5 6 4 3 2) 0) 1) 2 "Get by reference")
+(check-equal? (Tape-arg (Tape '(1 105 6 2 3 2) 1) 2) 6 "Get by reference")
 (check-equal? (action-output (Operation 1 0) '(1 2)) '(1 2) "Not an outputter")
 (check-equal? (action-output (Output 1 0 5) '(1 2)) '(1 2 5) "Is an outputter")
 (check-equal? (action-input (Operation 1 0) '(1 2)) '(1 2) "Not a consumer")
@@ -71,3 +74,18 @@
     (Tape '(1 2 3 4) 1) "No write")
 (check-equal? (Tape-write (Tape '(1 2 3 4) 1) (WriteTape 1 1 2 5))
     (Tape '(1 2 5 4) 1) "Do write")
+(let ([tape (Tape '(1 2 3 4 5 6 7) 0)])
+    (check-equal?
+        (Tape-tape (Tape-write tape (op-multiply tape)))
+        '(1 2 3 4 12 6 7)
+        "Param mode multiply"))
+(let ([tape (Tape '(1 2 3 2 2 6 7) 1)])
+    (check-equal?
+        (Tape-tape (Tape-write tape (op-multiply tape)))
+        '(1 2 6 2 2 6 7)
+        "Param mode multiply"))
+(let ([tape (Tape '(1 102 3 2 2 6 7) 1)])
+    (check-equal?
+        (Tape-tape (Tape-write tape (op-multiply tape)))
+        '(1 102 9 2 2 6 7)
+        "Param mode multiply"))
