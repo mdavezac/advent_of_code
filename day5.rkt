@@ -2,6 +2,7 @@
 
 (require racket/list)
 (require racket/string)
+(require racket/function)
 
 (struct Operation (tape-inc input-inc) #:transparent)
 (struct Output Operation (value))
@@ -62,6 +63,9 @@
           [output-index (Tape-arg tape 3 #t)])
     (WriteTape 4 0 output-index (op in-0 in-1))))
 
+(define (op-comparison op tape [input '()])
+    (binop-writeout (lambda (a b) (if (op a b) 1 0)) tape))
+
 (define (op-multiply tape [input '()])
     (binop-writeout * tape))
 (define (op-sum tape [input '()])
@@ -72,6 +76,12 @@
     (WriteTape 2 1 (Tape-arg tape 1 #t) (first input)))
 (define (op-output tape [input '()])
     (Output 2 0 (Tape-arg tape 1)))
+(define (jump-op op tape input)
+    (let ([condition (Tape-arg tape 1)]
+          [location (Tape-arg tape 2)])
+    (if (op condition)
+        (Operation (- location (Tape-head tape)) 0)
+        (Operation 3 0))))
 
 (define (make-machine tape input)
     (StateMachine
@@ -82,6 +92,10 @@
             (cons 2 op-multiply)
             (cons 3 op-read-write)
             (cons 4 op-output)
+            (cons 5 (curry jump-op (lambda (x) (not (= x 0)))))
+            (cons 6 (curry jump-op (curry = 0)))
+            (cons 7 (curry op-comparison <))
+            (cons 8 (curry op-comparison =))
             (cons 99 op-exit)))))
 
 (define (StateMachine-action machine)
@@ -166,9 +180,42 @@
        [final (StateMachine-next initial)])
  (check-equal? (first (Tape-tape final)) 19690720 "day2 data"))
 
+(let* ([data '(3 9 8 9 10 9 4 9 99 -1 8)]
+       [run (compose
+                StateMachine-output
+                StateMachine-next
+                (curry make-machine data))])
+ (check-equal? (run '(8)) '(1) "day5 comparison")
+ (check-equal? (run '(2)) '(0) "day5 comparison"))
+
+(let* ([data '(3 3 1107 -1 8 3 4 3 99)]
+       [run (compose
+                StateMachine-output
+                StateMachine-next
+                (curry make-machine data))])
+ (check-equal? (run '(8)) '(0) "day5 comparison 2")
+ (check-equal? (run '(7)) '(1) "day5 comparison 2")
+ (check-equal? (run '(9)) '(0) "day5 comparison 2"))
+
+(let* ([data '(3 12 6 12 15 1 13 14 13 4 13 99 -1 0 1 9)]
+       [run (compose
+                StateMachine-output
+                StateMachine-next
+                (curry make-machine data))])
+ (check-equal? (run '(0)) '(0) "day5 jump 1")
+ (check-equal? (run '(7)) '(1) "day5 jump 1")
+ (check-equal? (run '(9)) '(1) "day5 jump 1"))
+
 (let* ([data (read-data "day5.data")]
        [initial (make-machine data '(1))]
        [final (StateMachine-next initial)])
  (check-equal? (StateMachine-output final)
     '(0 0 0 0 0 0 0 0 0 5182797)
+    "day5 data part 1"))
+
+(let* ([data (read-data "day5.data")]
+       [initial (make-machine data '(5))]
+       [final (StateMachine-next initial)])
+ (check-equal? (StateMachine-output final)
+    '(12077198)
     "day5 data"))
