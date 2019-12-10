@@ -69,9 +69,9 @@
 (define (op-exit [tape '()] [input '()])
     (Exit 0 0))
 (define (op-read-write tape input)
-    (WriteTape 2 1 (Tape-arg 1 #t) (first input)))
+    (WriteTape 2 1 (Tape-arg tape 1 #t) (first input)))
 (define (op-output tape [input '()])
-    (Output 2 0 (Tape-arg 1)))
+    (Output 2 0 (Tape-arg tape 1)))
 
 (define (make-machine tape input)
     (StateMachine
@@ -165,3 +165,10 @@
        [initial (make-machine 2347-data '())]
        [final (StateMachine-next initial)])
  (check-equal? (first (Tape-tape final)) 19690720 "day2 data"))
+
+(let* ([data (read-data "day5.data")]
+       [initial (make-machine data '(1))]
+       [final (StateMachine-next initial)])
+ (check-equal? (StateMachine-output final)
+    '(0 0 0 0 0 0 0 0 0 5182797)
+    "day5 data"))
