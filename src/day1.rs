@@ -13,7 +13,7 @@ fn ints_from_file(filename: impl AsRef<Path>) -> Vec<u32> {
         .collect()
 }
 
-fn find_sum(sum: u32, integers: &Vec<u32>) -> Option<(usize, usize)> {
+fn find_sum(sum: u32, integers: &[u32]) -> Option<(usize, usize)> {
     for i in 0..integers.len() {
         for j in (i + 1)..integers.len() {
             if integers[i] + integers[j] == sum {
@@ -21,10 +21,10 @@ fn find_sum(sum: u32, integers: &Vec<u32>) -> Option<(usize, usize)> {
             }
         }
     }
-    return None;
+    None
 }
 
-fn find_sum3(sum: u32, integers: &Vec<u32>) -> Option<(usize, usize, usize)> {
+fn find_sum3(sum: u32, integers: &[u32]) -> Option<(usize, usize, usize)> {
     for i in 0..integers.len() {
         for j in (i + 1)..integers.len() {
             for k in (j + 1)..integers.len() {
@@ -34,10 +34,9 @@ fn find_sum3(sum: u32, integers: &Vec<u32>) -> Option<(usize, usize, usize)> {
             }
         }
     }
-    return None;
+    None
 }
 
-#[allow(dead_code)]
 pub fn day1() -> (u32, u32) {
     let integers = ints_from_file("data/day1.txt");
     let product2 = {
@@ -48,7 +47,7 @@ pub fn day1() -> (u32, u32) {
         let (i, j, k) = find_sum3(2020u32, &integers).expect("value not found");
         integers[i] * integers[j] * integers[k]
     };
-    return (product2, product3);
+    (product2, product3)
 }
 
 #[cfg(test)]
